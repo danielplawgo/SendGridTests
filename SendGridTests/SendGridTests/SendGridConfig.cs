@@ -14,5 +14,7 @@ namespace SendGridTests
         public string SenderName { get; set; }
 
         public string TemplateId { get; set; }
+
+        public string WebhooksKey { get; set; }
     }
 }

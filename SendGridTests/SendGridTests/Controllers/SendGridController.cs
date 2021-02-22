@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -16,8 +17,10 @@ namespace SendGridTests.Controllers
     public class SendGridController : ControllerBase
     {
         private readonly SendGridConfig _config;
-        public SendGridController(IOptions<SendGridConfig> config)
+        private readonly ILogger<SendGridController> _logger;
+        public SendGridController(IOptions<SendGridConfig> config, ILogger<SendGridController> logger)
         {
+            _logger = logger;
             _config = config.Value;
         }
 
@@ -41,7 +44,21 @@ namespace SendGridTests.Controllers
         {
             var responseContent = await response.Body.ReadAsStringAsync();
 
-            return string.IsNullOrEmpty(responseContent) ? Ok() : BadRequest(responseContent);
+            if (string.IsNullOrEmpty(responseContent) == false)
+            {
+                return BadRequest(responseContent);
+            }
+
+            var header = response.Headers.FirstOrDefault(h => h.Key == "X-Message-Id");
+
+            var messageId = header.Value?.FirstOrDefault();
+
+            _logger.LogInformation($@"MessageId: {messageId}");
+
+            return Ok(new
+            {
+                MessageId = messageId
+            });
         }
 
         [HttpPut]
